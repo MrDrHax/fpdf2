@@ -132,12 +132,12 @@ class TextStyle(FontFace):
         #                                     Whereas "" means "no emphasis"
         font_style: Optional[str] = None,
         font_size_pt: Optional[int] = None,
-        color: Union[int, tuple] = None,  # grey scale or (red, green, blue),
-        fill_color: Union[int, tuple] = None,  # grey scale or (red, green, blue),
+        color: Union[int, tuple, str, None] = None,  # grey scale or (red, green, blue),
+        fill_color: Union[int, tuple, None] = None,  # grey scale or (red, green, blue),
         underline: bool = False,
-        t_margin: Optional[int] = None,
-        l_margin: Union[Optional[int], Optional[Align], Optional[str]] = None,
-        b_margin: Optional[int] = None,
+        t_margin: Optional[Union[float, int]] = None,
+        l_margin: Union[Optional[Union[float, int]], Optional[Align], Optional[str]] = None,
+        b_margin: Optional[Union[float, int]] = None,
     ):
         super().__init__(
             font_family,

@@ -343,8 +343,9 @@ class Table:
             style = style.replace(fill_color=self._cell_fill_color)
         if i < self._num_heading_rows:
             style = FontFace.combine(style, self._headings_style)
-        style = FontFace.combine(style, row.style)
-        style = FontFace.combine(style, cell.style)
+        else: # TODO remove
+            style = FontFace.combine(style, row.style)
+            style = FontFace.combine(style, cell.style)
 
         padding = Padding.new(cell.padding) if cell.padding else self._padding
 

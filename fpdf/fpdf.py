@@ -436,6 +436,7 @@ class FPDF(GraphicsStateMixin, TextRegionMixin):
             tag_indents (dict): [**DEPRECATED since v2.8.0**]
                 mapping of HTML tag names to numeric values representing their horizontal left indentation. - Set `tag_styles` instead
             tag_styles (dict[str, fpdf.fonts.TextStyle]): mapping of HTML tag names to `fpdf.fonts.TextStyle` or `fpdf.fonts.FontFace` instances
+            table_tag_styles (dict[str, fpdf.enums.HTMLTableStyle]): mapping of HTML table tag names style table settings
         """
         html2pdf = self.HTML2FPDF_CLASS(self, *args, **kwargs)
         with self.local_context():

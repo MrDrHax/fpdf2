@@ -11,13 +11,14 @@ Usage documentation at: <https://py-pdf.github.io/fpdf2/HTML.html>
 import logging
 import re
 import warnings
+import copy
 from html.parser import HTMLParser
 from string import ascii_lowercase, ascii_uppercase
 from typing import Optional, Union
 
 from .deprecation import get_stack_level
 from .drawing_primitives import color_from_hex_string, convert_to_device_color
-from .enums import Align, TextEmphasis, XPos, YPos
+from .enums import Align, TextEmphasis, XPos, YPos, HTMLTableStyle
 from .errors import FPDFException
 from .fonts import FontFace, TextStyle
 from .table import Table
@@ -79,6 +80,17 @@ DEFAULT_TAG_STYLES = {
     "pre": TextStyle(t_margin=4 + 7 / 30, font_family="Courier"),
     "ol": TextStyle(t_margin=2),
     "ul": TextStyle(t_margin=2),
+}
+DEFAULT_TABLE_TAGS = {
+    "table": HTMLTableStyle(
+        headings_style=FontFace(emphasis="BOLD"),
+    ),
+    "thead": HTMLTableStyle(
+        headings_style=FontFace(emphasis="BOLD"),
+    ),
+    "tbody": HTMLTableStyle(
+        headings_style=FontFace(emphasis="BOLD"),
+    ),
 }
 INLINE_TAGS = ("a", "b", "code", "del", "em", "font", "i", "s", "strong", "u")
 BLOCK_TAGS = HEADING_TAGS + (
@@ -330,6 +342,7 @@ class HTML2FPDF(HTMLParser):
         warn_on_tags_not_matching=True,
         tag_indents=None,
         tag_styles=None,
+        table_tag_styles=None,
         font_family="times",
         render_title_tag=False,
     ):
@@ -442,6 +455,20 @@ class HTML2FPDF(HTMLParser):
                     b_margin=self.tag_styles[tag].b_margin,
                 )
             self.tag_styles[tag] = tag_style
+        self.table_tag_styles = copy.deepcopy(DEFAULT_TABLE_TAGS)
+        for tag, table_tag_style in (table_tag_styles or {}).items():
+            if tag not in DEFAULT_TABLE_TAGS:
+                raise NotImplementedError(
+                    f"Cannot set table style for HTML tag <{tag}> (contributions are welcome to add support for this)"
+                )
+            if not isinstance(table_tag_style, HTMLTableStyle):
+                raise ValueError(
+                    f"tag_styles values must be instances of HTMLTableStyle - received: {table_tag_style}"
+                )
+            
+            # copy the entire tag, no need to copy individually (for now)
+            self.table_tag_styles[tag] = table_tag_style
+
         if heading_sizes is not None:
             warnings.warn(
                 (
@@ -952,36 +979,40 @@ class HTML2FPDF(HTMLParser):
                 self.font_family = attrs.get("face").lower()
         if tag == "table":
             self._end_paragraph()
+
+            style = self.table_tag_styles['table']
+
             width = css_style.get("width", attrs.get("width"))
             if width:
                 if width[-1] == "%":
-                    width = self.pdf.epw * int(width[:-1]) / 100
+                    style.width = self.pdf.epw * int(width[:-1]) / 100
                 else:
-                    width = int(width) / self.pdf.k
+                    style.width = int(width) / self.pdf.k
             if "border" not in attrs:  # default borders
-                borders_layout = (
-                    "HORIZONTAL_LINES"
-                    if self.table_line_separators
-                    else "SINGLE_TOP_LINE"
-                )
+                if style.borders_layout is None:
+                    style.borders_layout = (
+                        "HORIZONTAL_LINES"
+                        if self.table_line_separators
+                        else "SINGLE_TOP_LINE"
+                    )
             elif int(attrs["border"]):  # explicitly enabled borders
-                borders_layout = (
-                    "ALL" if self.table_line_separators else "NO_HORIZONTAL_LINES"
-                )
+                style.borders_layout = "ALL" if self.table_line_separators else "NO_HORIZONTAL_LINES"
+                
             else:  # explicitly disabled borders
-                borders_layout = "NONE"
-            align = attrs.get("align", "center").upper()
-            padding = float(attrs["cellpadding"]) if "cellpadding" in attrs else None
-            spacing = float(attrs.get("cellspacing", 0))
+                style.borders_layout = "NONE"
+
+            if "align" in attrs:
+                style.align = attrs.get("align", "center").upper()
+            if "cellpadding" in attrs:
+                style.padding = float(attrs["cellpadding"])
+            if "cellspacing" in attrs:
+                style.spacing = float(attrs.get("cellspacing", 0))
+            if style.line_height is None:
+                style.line_height=self.font_size_pt / self.pdf.k * self.TABLE_LINE_HEIGHT
+
             self.table = Table(
                 self.pdf,
-                align=align,
-                borders_layout=borders_layout,
-                line_height=self.font_size_pt / self.pdf.k * self.TABLE_LINE_HEIGHT,
-                width=width,
-                padding=padding,
-                gutter_width=spacing,
-                gutter_height=spacing,
+                **style.as_dict()
             )
             self._ln()
         if tag == "tr":
@@ -1281,3 +1312,4 @@ class HTMLMixin:
             DeprecationWarning,
             stacklevel=get_stack_level(),
         )
+

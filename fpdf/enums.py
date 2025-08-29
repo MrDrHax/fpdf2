@@ -2,7 +2,7 @@ import abc
 from dataclasses import dataclass
 from enum import Enum, Flag, IntEnum, IntFlag
 from sys import intern
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 from fpdf.drawing_primitives import convert_to_device_color
 
@@ -967,6 +967,74 @@ class TableHeadingsDisplay(CoerciveIntEnum):
     ON_TOP_OF_EVERY_PAGE = 1
     "1: When a page break occurs, repeat the table headings at the top of every table fragment"
 
+class HTMLTableStyle:
+    "A helper table that allows for HTML table styling"
+
+    def __init__(self, 
+                 align="CENTER",
+                v_align="MIDDLE",
+                borders_layout=None,
+                cell_fill_color=None,
+                cell_fill_mode=TableCellFillMode.NONE,
+                col_widths=None,
+                first_row_as_headings=True,
+                gutter_height=0,
+                gutter_width=0,
+                headings_style=None,
+                line_height=None,
+                markdown=False,
+                text_align="JUSTIFY",
+                width=None,
+                wrapmode=WrapMode.WORD,
+                padding=None,
+                outer_border_width=None,
+                num_heading_rows=1,
+                repeat_headings=1,
+                min_row_height=None,) -> None:
+        self.align = align
+        self.v_align = v_align
+        self.borders_layout = borders_layout
+        self.cell_fill_color = cell_fill_color
+        self.cell_fill_mode = cell_fill_mode
+        self.col_widths = col_widths
+        self.first_row_as_headings = first_row_as_headings
+        self.gutter_height = gutter_height
+        self.gutter_width = gutter_width
+        self.headings_style = headings_style
+        self.line_height = line_height
+        self.markdown = markdown
+        self.text_align = text_align
+        self.width = width
+        self.wrapmode = wrapmode
+        self.padding = padding
+        self.outer_border_width = outer_border_width
+        self.num_heading_rows = num_heading_rows
+        self.repeat_headings = repeat_headings
+        self.min_row_height = min_row_height
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "align" : self.align,
+            "v_align" : self.v_align,
+            "borders_layout" : self.borders_layout,
+            "cell_fill_color" : self.cell_fill_color,
+            "cell_fill_mode" : self.cell_fill_mode,
+            "col_widths" : self.col_widths,
+            "first_row_as_headings" : self.first_row_as_headings,
+            "gutter_height" : self.gutter_height,
+            "gutter_width" : self.gutter_width,
+            "headings_style" : self.headings_style,
+            "line_height" : self.line_height,
+            "markdown" : self.markdown,
+            "text_align" : self.text_align,
+            "width" : self.width,
+            "wrapmode" : self.wrapmode,
+            "padding" : self.padding,
+            "outer_border_width" : self.outer_border_width,
+            "num_heading_rows" : self.num_heading_rows,
+            "repeat_headings" : self.repeat_headings,
+            "min_row_height" : self.min_row_height,
+        }
 
 class RenderStyle(CoerciveEnum):
     "Defines how to render shapes"
