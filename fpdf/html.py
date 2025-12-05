@@ -882,6 +882,14 @@ class HTML2FPDF(HTMLParser):
                     indent=tag_style.l_margin,
                 )
         if tag == "ul":
+            self.style_stack.append(
+                FontFace(
+                    family=self.font_family,
+                    emphasis=self.font_emphasis,
+                    size_pt=self.font_size_pt,
+                    color=self.font_color,
+                )
+            )
             self.indent += 1
             bullet_char = attrs.get("type", self.ul_bullet_char)
             self.bullet.append(bullet_char)
@@ -936,7 +944,8 @@ class HTML2FPDF(HTMLParser):
             self._end_paragraph()
         if tag == "li":
             prev_text_color = self.pdf.text_color
-            self.pdf.text_color = self.li_prefix_color
+            self.pdf.text_color = self.tag_styles['ul'].color
+            # self.pdf.text_color = self.li_prefix_color # TODO Fix this
             if self.bullet:
                 bullet = self.bullet[self.indent - 1]
             else:
@@ -951,6 +960,9 @@ class HTML2FPDF(HTMLParser):
                 bullet = f"{ol_prefix(ol_type, bullet)}."
             tag_style = self.tag_styles[tag]
             self._ln(tag_style.t_margin)
+            original = self.pdf.font_size_pt
+            if self.tag_styles['ul'].size_pt:
+                self.pdf.set_font_size(self.tag_styles['ul'].size_pt)
             self._new_paragraph(
                 line_height=(
                     self.line_height_stack[-1] if self.line_height_stack else None
@@ -959,7 +971,8 @@ class HTML2FPDF(HTMLParser):
                 bottom_margin=tag_style.b_margin,
                 bullet=bullet,
             )
-            self.pdf.text_color = prev_text_color
+            self.pdf.set_font_size(original)
+            # self.pdf.text_color = prev_text_color # TODO fix this
         if tag == "font":
             self.style_stack.append(
                 FontFace(
@@ -1167,6 +1180,7 @@ class HTML2FPDF(HTMLParser):
             self.indent -= 1
             self.line_height_stack.pop()
             self.bullet.pop()
+            self.style_stack.pop()
         if tag == "table":
             self.table.render()
             self.table = None
